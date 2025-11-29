@@ -5,8 +5,8 @@
  * Module 1: Collects veteran profile and service history
  */
 
-import { useRef } from 'react'
-import { Container, Box, Typography, Paper, Button, LinearProgress, alpha } from '@mui/material'
+import { useRef, useState } from 'react'
+import { Container, Box, Typography, Paper, Button, LinearProgress, CircularProgress, alpha } from '@mui/material'
 import { styled, keyframes } from '@mui/material/styles'
 import { useAuth } from '../context/AuthContext'
 import { useSession } from '../context/SessionContext'
@@ -119,6 +119,7 @@ const VeteranProfilePage = () => {
   const { user, signOut } = useAuth()
   const { session, loading, saveAnswer } = useSession()
   const navigate = useNavigate()
+  const [saving, setSaving] = useState(false)
 
   // Create refs for each component
   const contactInfoRef = useRef<ContactInfoHandle>(null)
@@ -132,41 +133,48 @@ const VeteranProfilePage = () => {
   }
 
   const handleSaveAndContinue = async () => {
-    // Collect data from all components
-    const contactData = contactInfoRef.current?.getData()
-    const militaryData = militaryServiceRef.current?.getData()
-    const mosData = mosHistoryRef.current?.getData()
-    const dutyData = dutyStationsRef.current?.getData()
+    setSaving(true)
 
-    // Save all data
-    if (contactData) {
-      await saveAnswer('contact_full_name', contactData.fullName)
-      await saveAnswer('contact_phone', contactData.phone)
-    }
+    try {
+      // Collect data from all components
+      const contactData = contactInfoRef.current?.getData()
+      const militaryData = militaryServiceRef.current?.getData()
+      const mosData = mosHistoryRef.current?.getData()
+      const dutyData = dutyStationsRef.current?.getData()
 
-    if (militaryData) {
-      await saveAnswer('military_status', militaryData.militaryStatus)
-      await saveAnswer('military_branches', JSON.stringify(militaryData.selectedBranches))
-      await saveAnswer('military_va_file_number', militaryData.vaFileNumber)
-      if (militaryData.serviceStartDate) {
-        await saveAnswer('military_service_start_date', militaryData.serviceStartDate.toISOString())
+      // Save all data
+      if (contactData) {
+        await saveAnswer('contact_full_name', contactData.fullName)
+        await saveAnswer('contact_phone', contactData.phone)
       }
-      if (militaryData.serviceEndDate) {
-        await saveAnswer('military_service_end_date', militaryData.serviceEndDate.toISOString())
+
+      if (militaryData) {
+        await saveAnswer('military_status', militaryData.militaryStatus)
+        await saveAnswer('military_branches', JSON.stringify(militaryData.selectedBranches))
+        await saveAnswer('military_va_file_number', militaryData.vaFileNumber)
+        if (militaryData.serviceStartDate) {
+          await saveAnswer('military_service_start_date', militaryData.serviceStartDate.toISOString())
+        }
+        if (militaryData.serviceEndDate) {
+          await saveAnswer('military_service_end_date', militaryData.serviceEndDate.toISOString())
+        }
+        await saveAnswer('military_currently_serving', militaryData.currentlyServing.toString())
       }
-      await saveAnswer('military_currently_serving', militaryData.currentlyServing.toString())
-    }
 
-    if (mosData) {
-      await saveAnswer('mos_history', JSON.stringify(mosData))
-    }
+      if (mosData) {
+        await saveAnswer('mos_history', JSON.stringify(mosData))
+      }
 
-    if (dutyData !== undefined) {
-      await saveAnswer('duty_stations', dutyData)
-    }
+      if (dutyData !== undefined) {
+        await saveAnswer('duty_stations', dutyData)
+      }
 
-    // TODO: Navigate to condition screening when implemented
-    alert('Module 1 data saved successfully! Module 2: Condition Screening will be implemented in Sprint 3')
+      // Navigate to condition screening
+      navigate('/intake/conditions')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -301,8 +309,9 @@ const VeteranProfilePage = () => {
           <ActionButton
             variant="contained"
             color="secondary"
-            endIcon={<ArrowForwardIcon />}
+            endIcon={saving ? <CircularProgress size={20} color="inherit" /> : <ArrowForwardIcon />}
             onClick={handleSaveAndContinue}
+            disabled={saving}
             sx={{
               background: (theme) =>
                 `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
@@ -310,9 +319,12 @@ const VeteranProfilePage = () => {
                 background: (theme) =>
                   `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.main} 100%)`,
               },
+              '&:disabled': {
+                background: (theme) => theme.palette.action.disabledBackground,
+              },
             }}
           >
-            Save & Continue
+            {saving ? 'Saving...' : 'Save & Continue'}
           </ActionButton>
         </Box>
       </Container>

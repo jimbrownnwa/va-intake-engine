@@ -8,10 +8,11 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { Box, CircularProgress } from '@mui/material'
 
-// Placeholder components (will be implemented)
+// Page components
 import WelcomePage from './pages/WelcomePage'
 import LoginPage from './pages/LoginPage'
 import VeteranProfilePage from './pages/VeteranProfilePage'
+import ConditionScreeningPage from './pages/ConditionScreeningPage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,6 +51,14 @@ function App() {
         element={
           <ProtectedRoute>
             <VeteranProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/intake/conditions"
+        element={
+          <ProtectedRoute>
+            <ConditionScreeningPage />
           </ProtectedRoute>
         }
       />

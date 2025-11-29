@@ -26,7 +26,8 @@ va-intake-engine/
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── supabase.ts        # Supabase client initialization
-│   │   │   ├── api/               # API functions (sessions, answers, conditions, profile)
+│   │   │   ├── api/
+│   │   │   │   └── conditions.ts  # ✅ Conditions API (fetch, category grouping)
 │   │   │   └── utils/             # Utility functions (validation, questionFlow)
 │   │   ├── types/
 │   │   │   ├── database.ts        # Generated Supabase types
@@ -41,14 +42,14 @@ va-intake-engine/
 │   │   │   ├── Auth/              # LoginForm, SignupForm, MagicLinkForm
 │   │   │   ├── Questions/         # QuestionRenderer, TextInput, SingleSelect, etc.
 │   │   │   ├── VeteranProfile/    # ContactInfo, MilitaryService, MOSHistory, DutyStations
-│   │   │   ├── Conditions/        # ConditionScreening, ConditionCard, ConditionBuilder
+│   │   │   ├── Conditions/        # ConditionCard (✅ implemented)
 │   │   │   └── Common/            # WelcomeScreen, NavigationButtons, AutoSaveIndicator
 │   │   ├── pages/
 │   │   │   ├── WelcomePage.tsx    # ✅ Landing page
 │   │   │   ├── LoginPage.tsx      # ✅ Auth page
-│   │   │   ├── VeteranProfilePage.tsx # ⚠️ Placeholder (needs full implementation)
-│   │   │   ├── ConditionScreeningPage.tsx # ⏸️ Not started
-│   │   │   ├── ConditionBuilderPage.tsx   # ⏸️ Not started
+│   │   │   ├── VeteranProfilePage.tsx # ✅ Complete (Module 1)
+│   │   │   ├── ConditionScreeningPage.tsx # ✅ Complete (Module 2)
+│   │   │   ├── ConditionBuilderPage.tsx   # ⏸️ Not started (Sprint 4)
 │   │   │   └── CompletePage.tsx   # ⏸️ Not started
 │   │   ├── theme.ts               # ✅ MUI theme configuration
 │   │   ├── main.tsx               # ✅ Entry point with providers
@@ -218,14 +219,25 @@ va-intake-engine/
 - All saves go through SessionContext.saveAnswer()
 - Clean separation of concerns between components
 
-### 🚀 Next Up (Sprint 3 - Module 2: Condition Screening)
+### ✅ Completed (Sprint 3 - Module 2: Condition Screening)
 
-**Planned Features**:
-- [ ] ConditionScreeningPage
-- [ ] Fetch conditions from database
-- [ ] Multi-select condition list with search/filter
-- [ ] Save selected conditions to condition_instances table
-- [ ] Route to condition builder for each selected condition
+**Condition Screening Components**:
+- [x] ConditionScreeningPage - displays all 30 conditions grouped by category
+- [x] ConditionCard component - expandable card with selection, description, rating checkbox
+- [x] Conditions API (`lib/api/conditions.ts`) - fetch conditions, category grouping
+- [x] Search/filter functionality for conditions
+- [x] Accordion-based category grouping (Hearing, Mental Health, Musculoskeletal, etc.)
+- [x] Save selected conditions to `condition_instances` table via SessionContext
+- [x] Navigation flow: Profile → Conditions → Condition Builder (Sprint 4)
+- [x] Progress tracking with selected condition count
+- [x] Responsive design matching "Government Modernism" theme
+
+**Technical Implementation**:
+- Uses existing `addCondition` and `updateConditionInstance` from SessionContext
+- Category labels defined in `CATEGORY_LABELS` constant
+- Conditions sorted by `display_order` from database
+- Local state for search, expanded categories
+- Immediate save on condition toggle, debounced description save on blur
 
 ### ⏸️ Not Started (Sprint 4 - Module 3: Tinnitus Condition Builder)
 
@@ -496,6 +508,6 @@ DELETE FROM intake_sessions WHERE veteran_id = 'user-uuid';
 ---
 
 **Last Updated**: 2024-11-29
-**Current Sprint**: Sprint 2 Complete ✅ → Starting Sprint 3
-**Next Milestone**: Module 2 (Condition Screening)
+**Current Sprint**: Sprint 3 Complete ✅ → Starting Sprint 4
+**Next Milestone**: Module 3 (Tinnitus Condition Builder)
 **GitHub**: https://github.com/jimbrownnwa/va-intake-engine
