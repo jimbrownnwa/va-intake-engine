@@ -27,8 +27,10 @@ va-intake-engine/
 │   │   ├── lib/
 │   │   │   ├── supabase.ts        # Supabase client initialization
 │   │   │   ├── api/
-│   │   │   │   └── conditions.ts  # ✅ Conditions API (fetch, category grouping)
-│   │   │   └── utils/             # Utility functions (validation, questionFlow)
+│   │   │   │   ├── conditions.ts  # ✅ Conditions API (fetch, category grouping)
+│   │   │   │   └── questions.ts   # ✅ Questions API (fetch templates)
+│   │   │   └── utils/
+│   │   │       └── questionFlow.ts # ✅ Question flow with conditional logic
 │   │   ├── types/
 │   │   │   ├── database.ts        # Generated Supabase types
 │   │   │   ├── questions.ts       # Question/Answer types
@@ -40,17 +42,17 @@ va-intake-engine/
 │   │   ├── components/
 │   │   │   ├── Layout/            # AppLayout, ProgressBar
 │   │   │   ├── Auth/              # LoginForm, SignupForm, MagicLinkForm
-│   │   │   ├── Questions/         # QuestionRenderer, TextInput, SingleSelect, etc.
+│   │   │   ├── Questions/         # ✅ TextInput, TextArea, SingleSelect, MultiSelect, DateInput, ScaleSlider, QuestionRenderer
 │   │   │   ├── VeteranProfile/    # ContactInfo, MilitaryService, MOSHistory, DutyStations
-│   │   │   ├── Conditions/        # ConditionCard (✅ implemented)
+│   │   │   ├── Conditions/        # ConditionCard
 │   │   │   └── Common/            # WelcomeScreen, NavigationButtons, AutoSaveIndicator
 │   │   ├── pages/
 │   │   │   ├── WelcomePage.tsx    # ✅ Landing page
 │   │   │   ├── LoginPage.tsx      # ✅ Auth page
 │   │   │   ├── VeteranProfilePage.tsx # ✅ Complete (Module 1)
 │   │   │   ├── ConditionScreeningPage.tsx # ✅ Complete (Module 2)
-│   │   │   ├── ConditionBuilderPage.tsx   # ⏸️ Not started (Sprint 4)
-│   │   │   └── CompletePage.tsx   # ⏸️ Not started
+│   │   │   ├── ConditionBuilderPage.tsx   # ✅ Complete (Module 3)
+│   │   │   └── CompletePage.tsx   # ✅ Complete
 │   │   ├── theme.ts               # ✅ MUI theme configuration
 │   │   ├── main.tsx               # ✅ Entry point with providers
 │   │   └── App.tsx                # ✅ Routing setup
@@ -239,14 +241,43 @@ va-intake-engine/
 - Local state for search, expanded categories
 - Immediate save on condition toggle, debounced description save on blur
 
-### ⏸️ Not Started (Sprint 4 - Module 3: Tinnitus Condition Builder)
+### ✅ Completed (Sprint 4 - Module 3: Condition Builder)
 
-- [ ] ConditionBuilderPage
-- [ ] QuestionRenderer (dynamic)
-- [ ] All question type components (text, textarea, select, multi-select, date, scale)
-- [ ] Conditional question logic (showIf)
-- [ ] Mark condition as completed
-- [ ] CompletePage
+**Question Type Components** (`components/Questions/`):
+- [x] TextInput - Single-line text input
+- [x] TextArea - Multi-line with character count and min/max length
+- [x] SingleSelect - Radio button group with styled options
+- [x] MultiSelect - Checkbox group with "None" logic
+- [x] DateInput - Month/year picker using MUI DatePicker + dayjs
+- [x] ScaleSlider - 1-10 severity scale with visual feedback and labels
+- [x] QuestionRenderer - Dynamic component that renders based on question type
+
+**API & Utilities**:
+- [x] `lib/api/questions.ts` - Fetch question templates from Supabase
+- [x] `lib/utils/questionFlow.ts` - Question flow with conditional logic (showIf)
+
+**Pages**:
+- [x] ConditionBuilderPage - Iterates through selected conditions, shows questions one at a time
+- [x] CompletePage - Success page with summary and next steps
+
+**Technical Implementation**:
+- 40+ questions across 6 categories (timeline, symptom, treatment, functional_impact, nexus, additional)
+- Conditional logic hides/shows questions based on previous answers
+- Stepper navigation for multiple conditions
+- Manual save on Next/Previous button click (no auto-save lag)
+- Local state for current answer, saves on navigation
+- Progress tracking per question
+- Category badges with color coding
+
+---
+
+## MVP Complete
+
+All 4 sprints are now complete:
+- **Sprint 1**: Foundation (database, auth, routing)
+- **Sprint 2**: Module 1 - Veteran Profile
+- **Sprint 3**: Module 2 - Condition Screening (30 conditions)
+- **Sprint 4**: Module 3 - Condition Builder + Complete Page
 
 ---
 
@@ -508,6 +539,6 @@ DELETE FROM intake_sessions WHERE veteran_id = 'user-uuid';
 ---
 
 **Last Updated**: 2024-11-29
-**Current Sprint**: Sprint 3 Complete ✅ → Starting Sprint 4
-**Next Milestone**: Module 3 (Tinnitus Condition Builder)
+**Current Sprint**: Sprint 4 Complete ✅ - MVP Complete!
+**Next Milestone**: Phase 2 (Scale to all 30 conditions, Admin Panel)
 **GitHub**: https://github.com/jimbrownnwa/va-intake-engine

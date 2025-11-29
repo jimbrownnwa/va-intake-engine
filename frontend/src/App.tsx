@@ -13,6 +13,8 @@ import WelcomePage from './pages/WelcomePage'
 import LoginPage from './pages/LoginPage'
 import VeteranProfilePage from './pages/VeteranProfilePage'
 import ConditionScreeningPage from './pages/ConditionScreeningPage'
+import ConditionBuilderPage from './pages/ConditionBuilderPage'
+import CompletePage from './pages/CompletePage'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -59,6 +61,22 @@ function App() {
         element={
           <ProtectedRoute>
             <ConditionScreeningPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/intake/conditions/builder"
+        element={
+          <ProtectedRoute>
+            <ConditionBuilderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/intake/complete"
+        element={
+          <ProtectedRoute>
+            <CompletePage />
           </ProtectedRoute>
         }
       />
