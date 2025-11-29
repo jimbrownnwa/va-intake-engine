@@ -188,33 +188,53 @@ va-intake-engine/
 - [x] TypeScript types (database, questions, session)
 - [x] AuthContext (signup, login, magic link, logout)
 - [x] SessionContext (session CRUD, auto-save, progress)
-- [x] MUI theme configuration
+- [x] MUI theme "Government Modernism" configured
 - [x] Routing with protected routes
 - [x] WelcomePage (landing)
 - [x] LoginPage (3 auth methods)
-- [x] VeteranProfilePage (placeholder)
 
-### ⚠️ In Progress (Sprint 2 - Module 1)
+### ✅ Completed (Sprint 2 - Module 1: Veteran Profile)
 
-**Veteran Profile Components** (NOT YET BUILT):
-- [ ] ContactInfo component
-- [ ] MilitaryService component
-- [ ] MOSHistory component (repeatable, "add another")
-- [ ] DutyStations component
-- [ ] Wire up auto-save for all fields
-- [ ] Form validation
-- [ ] Progress tracking integration
+**Veteran Profile Components**:
+- [x] ContactInfo component (name, email, phone)
+- [x] MilitaryService component (status, branches, dates, VA file number)
+- [x] MOSHistory component (repeatable up to 10 entries with add/remove)
+- [x] DutyStations component (multiline textarea with character limit)
+- [x] VeteranProfilePage fully integrated with all components
+- [x] Manual save on "Save & Continue" button (no auto-save lag)
+- [x] forwardRef pattern with getData() methods
+- [x] Form state loaded from database on mount
+- [x] All data persisted to Supabase (answers table)
+- [x] Progress tracking (session.progress_percentage)
+- [x] MUI DatePickers with month/year views
+- [x] Form validation and required fields
+- [x] Proper TypeScript types with `import type` syntax
 
-### ⏸️ Not Started (Sprint 3+)
+**Technical Implementation**:
+- Components use forwardRef + useImperativeHandle pattern
+- Parent component (VeteranProfilePage) collects all data via refs
+- Manual save prevents input lag issues
+- Data loaded from SessionContext.getAnswer() on mount
+- All saves go through SessionContext.saveAnswer()
+- Clean separation of concerns between components
 
+### 🚀 Next Up (Sprint 3 - Module 2: Condition Screening)
+
+**Planned Features**:
 - [ ] ConditionScreeningPage
-- [ ] ConditionCard component (3-question pattern)
+- [ ] Fetch conditions from database
+- [ ] Multi-select condition list with search/filter
+- [ ] Save selected conditions to condition_instances table
+- [ ] Route to condition builder for each selected condition
+
+### ⏸️ Not Started (Sprint 4 - Module 3: Tinnitus Condition Builder)
+
 - [ ] ConditionBuilderPage
 - [ ] QuestionRenderer (dynamic)
 - [ ] All question type components (text, textarea, select, multi-select, date, scale)
+- [ ] Conditional question logic (showIf)
+- [ ] Mark condition as completed
 - [ ] CompletePage
-- [ ] ProgressBar component
-- [ ] Navigation buttons
 
 ---
 
@@ -476,5 +496,6 @@ DELETE FROM intake_sessions WHERE veteran_id = 'user-uuid';
 ---
 
 **Last Updated**: 2024-11-29
-**Current Sprint**: Sprint 1 Complete ✅ → Starting Sprint 2
-**Next Milestone**: Complete Module 1 (Veteran Profile)
+**Current Sprint**: Sprint 2 Complete ✅ → Starting Sprint 3
+**Next Milestone**: Module 2 (Condition Screening)
+**GitHub**: https://github.com/jimbrownnwa/va-intake-engine
