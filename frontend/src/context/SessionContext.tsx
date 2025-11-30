@@ -28,6 +28,35 @@ export const useSession = () => {
   return context;
 };
 
+/**
+ * Check if an error is auth-related (user deleted, token invalid, RLS violation)
+ */
+const isAuthError = (error: any): boolean => {
+  if (!error) return false;
+  const message = error.message?.toLowerCase() || '';
+  const code = error.code?.toLowerCase() || '';
+
+  return (
+    code === 'pgrst301' || // JWT expired
+    code === '42501' || // RLS policy violation
+    message.includes('jwt') ||
+    message.includes('token') ||
+    message.includes('unauthorized') ||
+    message.includes('permission denied') ||
+    message.includes('row-level security')
+  );
+};
+
+/**
+ * Handle auth errors by signing out the user
+ */
+const handleAuthError = async (error: any): Promise<void> => {
+  if (isAuthError(error)) {
+    console.error('Auth error detected, signing out:', error);
+    await supabase.auth.signOut();
+  }
+};
+
 interface SessionProviderProps {
   children: ReactNode;
 }
@@ -86,6 +115,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
         }));
       } catch (error) {
         console.error('Error initializing session:', error);
+        await handleAuthError(error);
         setState(prev => ({
           ...prev,
           error: error as Error,
@@ -115,6 +145,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
       return newSession;
     } catch (error) {
       console.error('Error creating session:', error);
+      await handleAuthError(error);
       setState(prev => ({ ...prev, error: error as Error }));
       return null;
     }
@@ -240,6 +271,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
       }));
     } catch (error) {
       console.error('Error updating session:', error);
+      await handleAuthError(error);
       setState(prev => ({ ...prev, error: error as Error }));
     }
   }, [state.session]);
@@ -298,6 +330,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
       await updateProgress();
     } catch (error) {
       console.error('Error saving answer:', error);
+      await handleAuthError(error);
       setState(prev => ({ ...prev, error: error as Error }));
     }
   }, [state.session]);
@@ -358,7 +391,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
    * Add or update a condition instance
    */
   const addCondition = useCallback(async (conditionId: string, hasCondition: boolean) => {
-    if (!state.session) return;
+    if (!state.session || !user) return;
 
     try {
       const { data, error } = await supabase
@@ -366,6 +399,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
         .upsert({
           session_id: state.session.id,
           condition_id: conditionId,
+          veteran_id: user.id,
           has_condition: hasCondition,
         }, {
           onConflict: 'session_id,condition_id',
@@ -384,9 +418,10 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
       }));
     } catch (error) {
       console.error('Error adding condition:', error);
+      await handleAuthError(error);
       setState(prev => ({ ...prev, error: error as Error }));
     }
-  }, [state.session]);
+  }, [state.session, user]);
 
   /**
    * Update a condition instance
@@ -413,6 +448,7 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
       }));
     } catch (error) {
       console.error('Error updating condition instance:', error);
+      await handleAuthError(error);
       setState(prev => ({ ...prev, error: error as Error }));
     }
   }, []);

@@ -195,6 +195,7 @@ export interface Database {
           id: string;
           session_id: string;
           condition_id: string;
+          veteran_id: string;
           has_condition: boolean;
           personal_description: string | null;
           has_existing_rating: boolean;
@@ -206,6 +207,7 @@ export interface Database {
           id?: string;
           session_id: string;
           condition_id: string;
+          veteran_id: string;
           has_condition?: boolean;
           personal_description?: string | null;
           has_existing_rating?: boolean;
@@ -217,6 +219,7 @@ export interface Database {
           id?: string;
           session_id?: string;
           condition_id?: string;
+          veteran_id?: string;
           has_condition?: boolean;
           personal_description?: string | null;
           has_existing_rating?: boolean;
