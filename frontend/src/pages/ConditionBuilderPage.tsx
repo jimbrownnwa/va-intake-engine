@@ -27,7 +27,9 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useSession } from '../context/SessionContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchQuestionTemplates } from '../lib/api/questions';
 import { getConditionBuilderFlow, getVisibleQuestions } from '../lib/utils/questionFlow';
 import { QuestionRenderer } from '../components/Questions';
@@ -146,6 +148,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
 
 const ConditionBuilderPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const {
     session,
     loading: sessionLoading,
@@ -326,6 +329,23 @@ const ConditionBuilderPage = () => {
     setCurrentQuestionIndex(0);
   };
 
+  // Handle save and exit - save current answer then sign out
+  const handleSaveAndExit = async () => {
+    setSaving(true);
+    try {
+      // Save current answer before exiting
+      if (currentInstance && currentQuestion && currentAnswer !== undefined && currentAnswer !== null && currentAnswer !== '') {
+        await saveAnswer(currentQuestion.question_key, currentAnswer, currentInstance.id);
+      }
+      await signOut();
+      navigate('/');
+    } catch (err) {
+      console.error('Error saving before exit:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Calculate progress
   const totalQuestions = activeConditions.length * visibleQuestions.length;
   const answeredQuestions =
@@ -476,15 +496,26 @@ const ConditionBuilderPage = () => {
 
         {/* Navigation Buttons */}
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'space-between', mt: 4 }}>
-          <ActionButton
-            variant="outlined"
-            color="primary"
-            startIcon={<ArrowBackIcon />}
-            onClick={handlePrevious}
-            disabled={currentQuestionIndex === 0 && currentConditionIndex === 0}
-          >
-            Previous
-          </ActionButton>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <ActionButton
+              variant="outlined"
+              color="primary"
+              startIcon={<ArrowBackIcon />}
+              onClick={handlePrevious}
+              disabled={saving || (currentQuestionIndex === 0 && currentConditionIndex === 0)}
+            >
+              Previous
+            </ActionButton>
+            <ActionButton
+              variant="outlined"
+              color="error"
+              startIcon={<ExitToAppIcon />}
+              onClick={handleSaveAndExit}
+              disabled={saving}
+            >
+              Save & Exit
+            </ActionButton>
+          </Box>
           <ActionButton
             variant="contained"
             color="secondary"

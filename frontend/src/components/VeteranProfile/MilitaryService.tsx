@@ -23,6 +23,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useSession } from '../../context/SessionContext'
+import { supabase } from '../../lib/supabase'
 
 const SectionCard = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -79,7 +80,7 @@ export type MilitaryServiceHandle = {
 }
 
 const MilitaryService = forwardRef<MilitaryServiceHandle>((props, ref) => {
-  const { getAnswer } = useSession()
+  const { session } = useSession()
 
   const [militaryStatus, setMilitaryStatus] = useState('')
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
@@ -88,25 +89,51 @@ const MilitaryService = forwardRef<MilitaryServiceHandle>((props, ref) => {
   const [serviceEndDate, setServiceEndDate] = useState<Date | null>(null)
   const [currentlyServing, setCurrentlyServing] = useState(false)
 
-  // Load saved values on mount
+  // Load saved values from database tables on mount
   useEffect(() => {
     const loadSavedData = async () => {
-      const savedStatus = await getAnswer('military_status')
-      const savedBranches = await getAnswer('military_branches')
-      const savedVAFileNumber = await getAnswer('military_va_file_number')
-      const savedStartDate = await getAnswer('military_service_start_date')
-      const savedEndDate = await getAnswer('military_service_end_date')
-      const savedCurrentlyServing = await getAnswer('military_currently_serving')
+      if (!session?.id) return
 
-      if (savedStatus) setMilitaryStatus(savedStatus)
-      if (savedBranches) setSelectedBranches(JSON.parse(savedBranches))
-      if (savedVAFileNumber) setVaFileNumber(savedVAFileNumber)
-      if (savedStartDate) setServiceStartDate(new Date(savedStartDate))
-      if (savedEndDate) setServiceEndDate(new Date(savedEndDate))
-      if (savedCurrentlyServing) setCurrentlyServing(savedCurrentlyServing === 'true')
+      // Load from veteran_profile table
+      const { data: profileData } = await supabase
+        .from('veteran_profile')
+        .select('*')
+        .eq('session_id', session.id)
+        .maybeSingle()
+
+      if (profileData) {
+        // Map database values back to display values
+        if (profileData.military_status) {
+          const statusMap: Record<string, string> = {
+            'active_duty': 'Active Duty',
+            'veteran': 'Veteran (Separated/Retired)',
+            'guard': 'National Guard',
+            'reserve': 'Reserve',
+          }
+          setMilitaryStatus(statusMap[profileData.military_status] || profileData.military_status)
+        }
+        if (profileData.va_file_number) setVaFileNumber(profileData.va_file_number)
+        if (profileData.service_start_date) setServiceStartDate(new Date(profileData.service_start_date))
+        if (profileData.service_end_date) {
+          setServiceEndDate(new Date(profileData.service_end_date))
+        } else if (profileData.service_start_date) {
+          // If start date exists but no end date, they're currently serving
+          setCurrentlyServing(true)
+        }
+      }
+
+      // Load from branches_of_service table
+      const { data: branchesData } = await supabase
+        .from('branches_of_service')
+        .select('branch_name')
+        .eq('session_id', session.id)
+
+      if (branchesData && branchesData.length > 0) {
+        setSelectedBranches(branchesData.map(b => b.branch_name))
+      }
     }
     loadSavedData()
-  }, [getAnswer])
+  }, [session?.id])
 
   // Expose getData method to parent
   useImperativeHandle(ref, () => ({

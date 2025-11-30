@@ -7,6 +7,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Box, Typography, TextField, alpha } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { useSession } from '../../context/SessionContext'
+import { supabase } from '../../lib/supabase'
 
 const SectionCard = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -45,18 +46,27 @@ export type DutyStationsHandle = {
 }
 
 const DutyStations = forwardRef<DutyStationsHandle>((props, ref) => {
-  const { getAnswer } = useSession()
+  const { session } = useSession()
 
   const [dutyStations, setDutyStations] = useState('')
 
-  // Load saved values on mount
+  // Load saved values from veteran_profile table on mount
   useEffect(() => {
     const loadSavedData = async () => {
-      const savedStations = await getAnswer('duty_stations')
-      if (savedStations) setDutyStations(savedStations)
+      if (!session?.id) return
+
+      const { data: profileData } = await supabase
+        .from('veteran_profile')
+        .select('*')
+        .eq('session_id', session.id)
+        .maybeSingle() as { data: { duty_stations: string | null } | null }
+
+      if (profileData?.duty_stations) {
+        setDutyStations(profileData.duty_stations)
+      }
     }
     loadSavedData()
-  }, [getAnswer])
+  }, [session?.id])
 
   // Expose getData method to parent
   useImperativeHandle(ref, () => ({

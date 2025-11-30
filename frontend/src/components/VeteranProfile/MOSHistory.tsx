@@ -22,6 +22,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { useSession } from '../../context/SessionContext'
+import { supabase } from '../../lib/supabase'
 
 const SectionCard = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -67,7 +68,7 @@ export type MOSHistoryHandle = {
 }
 
 const MOSHistory = forwardRef<MOSHistoryHandle>((props, ref) => {
-  const { getAnswer } = useSession()
+  const { session } = useSession()
 
   const [entries, setEntries] = useState<MOSEntry[]>([
     {
@@ -78,15 +79,22 @@ const MOSHistory = forwardRef<MOSHistoryHandle>((props, ref) => {
     },
   ])
 
-  // Load saved values on mount
+  // Load saved values from mos_history table on mount
   useEffect(() => {
     const loadSavedData = async () => {
-      const savedEntries = await getAnswer('mos_history')
-      if (savedEntries) {
-        const parsed = JSON.parse(savedEntries)
+      if (!session?.id) return
+
+      const { data: mosData } = await supabase
+        .from('mos_history')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('sequence_order', { ascending: true })
+
+      if (mosData && mosData.length > 0) {
         setEntries(
-          parsed.map((entry: any) => ({
-            ...entry,
+          mosData.map((entry: any) => ({
+            id: entry.id,
+            job_title: entry.job_title,
             start_date: entry.start_date ? new Date(entry.start_date) : null,
             end_date: entry.end_date ? new Date(entry.end_date) : null,
           }))
@@ -94,7 +102,7 @@ const MOSHistory = forwardRef<MOSHistoryHandle>((props, ref) => {
       }
     }
     loadSavedData()
-  }, [getAnswer])
+  }, [session?.id])
 
   // Expose getData method to parent
   useImperativeHandle(ref, () => ({

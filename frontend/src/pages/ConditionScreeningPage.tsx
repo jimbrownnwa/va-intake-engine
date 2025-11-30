@@ -28,7 +28,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useSession } from '../context/SessionContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchConditionsByCategory, getCategoryLabel, CATEGORY_LABELS } from '../lib/api/conditions';
 import ConditionCard from '../components/Conditions/ConditionCard';
 import type { Condition, ConditionInstance } from '../types/session';
@@ -151,6 +153,7 @@ const ActionButton = styled(Button)(({ theme }) => ({
 
 const ConditionScreeningPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const {
     session,
     loading: sessionLoading,
@@ -253,6 +256,12 @@ const ConditionScreeningPage = () => {
     }
     // Navigate to condition builder (will be implemented in Sprint 4)
     navigate('/intake/conditions/builder');
+  };
+
+  // Handle save and exit - conditions are auto-saved, just sign out
+  const handleSaveAndExit = async () => {
+    await signOut();
+    navigate('/');
   };
 
   if (loading || sessionLoading) {
@@ -397,14 +406,24 @@ const ConditionScreeningPage = () => {
         })}
 
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'space-between', mt: 4 }}>
-          <ActionButton
-            variant="outlined"
-            color="primary"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/intake/profile')}
-          >
-            Back to Profile
-          </ActionButton>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <ActionButton
+              variant="outlined"
+              color="primary"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/intake/profile')}
+            >
+              Back to Profile
+            </ActionButton>
+            <ActionButton
+              variant="outlined"
+              color="error"
+              startIcon={<ExitToAppIcon />}
+              onClick={handleSaveAndExit}
+            >
+              Save & Exit
+            </ActionButton>
+          </Box>
           <ActionButton
             variant="contained"
             color="secondary"
