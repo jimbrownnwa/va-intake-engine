@@ -4120,7 +4120,8 @@ In actual implementation:
 \- \*\*Accepted Types:\*\* PDF, JPG, PNG, DOC, DOCX  
 \- \*\*Max Size:\*\* 25MB per file  
 \- \*\*Multiple Files:\*\* Yes (allow multiple uploads)  
-\- \*\*Help Text:\*\* If you have medical records, diagnosis letters, treatment notes, or other supporting documents, you can upload them here. This is optional \- we can also request records on your behalf.
+\- \*\*Help Text:\*\* If you have medical records, diagn
+ehalf.
 
 \---
 

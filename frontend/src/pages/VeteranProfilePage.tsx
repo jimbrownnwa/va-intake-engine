@@ -11,6 +11,7 @@ import { styled, keyframes } from '@mui/material/styles'
 import { useAuth } from '../context/AuthContext'
 import { useSession } from '../context/SessionContext'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'
@@ -133,6 +134,10 @@ const VeteranProfilePage = () => {
   }
 
   const handleSaveAndContinue = async () => {
+    if (!session) {
+      console.error('No session available')
+      return
+    }
     setSaving(true)
 
     try {
@@ -142,37 +147,139 @@ const VeteranProfilePage = () => {
       const mosData = mosHistoryRef.current?.getData()
       const dutyData = dutyStationsRef.current?.getData()
 
-      // Save all data
+      console.log('Saving data:', { contactData, militaryData, mosData, dutyData })
+
+      // Save contact info to answers table (name and phone)
       if (contactData) {
+        console.log('Saving contact info...')
         await saveAnswer('contact_full_name', contactData.fullName)
         await saveAnswer('contact_phone', contactData.phone)
+        console.log('Contact info saved')
       }
 
-      if (militaryData) {
-        await saveAnswer('military_status', militaryData.militaryStatus)
-        await saveAnswer('military_branches', JSON.stringify(militaryData.selectedBranches))
-        await saveAnswer('military_va_file_number', militaryData.vaFileNumber)
-        if (militaryData.serviceStartDate) {
-          await saveAnswer('military_service_start_date', militaryData.serviceStartDate.toISOString())
+      // Save to veteran_profile table (requires service_start_date)
+      if (militaryData?.serviceStartDate) {
+        console.log('Saving veteran_profile...')
+        const profileData: Record<string, any> = {
+          session_id: session.id,
+          service_start_date: militaryData.serviceStartDate.toISOString().split('T')[0],
+        }
+
+        // Map display values to database values
+        if (militaryData.militaryStatus) {
+          const statusMap: Record<string, string> = {
+            'Active Duty': 'active_duty',
+            'Veteran (Separated/Retired)': 'veteran',
+            'National Guard': 'guard',
+            'Reserve': 'reserve',
+          }
+          profileData.military_status = statusMap[militaryData.militaryStatus] || militaryData.militaryStatus
+        }
+        if (militaryData.vaFileNumber) {
+          profileData.va_file_number = militaryData.vaFileNumber
         }
         if (militaryData.serviceEndDate) {
-          await saveAnswer('military_service_end_date', militaryData.serviceEndDate.toISOString())
+          profileData.service_end_date = militaryData.serviceEndDate.toISOString().split('T')[0]
         }
-        await saveAnswer('military_currently_serving', militaryData.currentlyServing.toString())
+        if (dutyData !== undefined) {
+          profileData.duty_stations = dutyData
+        }
+
+        console.log('Profile data to save:', profileData)
+
+        // Upsert veteran_profile
+        const { error: profileError } = await supabase
+          .from('veteran_profile')
+          .upsert(profileData, { onConflict: 'session_id' })
+
+        if (profileError) {
+          console.error('Error saving veteran_profile:', profileError)
+          throw profileError
+        }
+        console.log('veteran_profile saved')
       }
 
-      if (mosData) {
-        await saveAnswer('mos_history', JSON.stringify(mosData))
+      // Save branches to branches_of_service table
+      if (militaryData?.selectedBranches && militaryData.selectedBranches.length > 0) {
+        console.log('Saving branches...', militaryData.selectedBranches)
+        // Delete existing branches for this session first
+        const { error: deleteError } = await supabase
+          .from('branches_of_service')
+          .delete()
+          .eq('session_id', session.id)
+
+        if (deleteError) {
+          console.error('Error deleting branches:', deleteError)
+          throw deleteError
+        }
+
+        // Insert new branches
+        const branchRows = militaryData.selectedBranches.map((branch: string) => ({
+          session_id: session.id,
+          branch_name: branch,
+        }))
+
+        const { error: branchError } = await supabase
+          .from('branches_of_service')
+          .insert(branchRows)
+
+        if (branchError) {
+          console.error('Error saving branches:', branchError)
+          throw branchError
+        }
+        console.log('Branches saved')
       }
 
-      if (dutyData !== undefined) {
-        await saveAnswer('duty_stations', dutyData)
+      // Save MOS history to mos_history table (requires job_title, start_date, end_date)
+      if (mosData && mosData.length > 0) {
+        console.log('Processing MOS data...', mosData)
+        // Filter to only complete entries (all required fields present)
+        // MOSHistory component uses snake_case: job_title, start_date, end_date
+        const completeEntries = mosData.filter((entry: any) =>
+          entry.job_title && entry.start_date && entry.end_date
+        )
+        console.log('Complete MOS entries:', completeEntries)
+
+        // Delete existing MOS entries for this session first
+        const { error: deleteMosError } = await supabase
+          .from('mos_history')
+          .delete()
+          .eq('session_id', session.id)
+
+        if (deleteMosError) {
+          console.error('Error deleting MOS history:', deleteMosError)
+          throw deleteMosError
+        }
+
+        // Only insert if there are complete entries
+        if (completeEntries.length > 0) {
+          const mosRows = completeEntries.map((entry: any, index: number) => ({
+            session_id: session.id,
+            job_title: entry.job_title,
+            start_date: new Date(entry.start_date).toISOString().split('T')[0],
+            end_date: new Date(entry.end_date).toISOString().split('T')[0],
+            sequence_order: index + 1,
+          }))
+          console.log('MOS rows to insert:', mosRows)
+
+          const { error: mosError } = await supabase
+            .from('mos_history')
+            .insert(mosRows)
+
+          if (mosError) {
+            console.error('Error saving MOS history:', mosError)
+            throw mosError
+          }
+          console.log('MOS history saved')
+        }
       }
 
       // Navigate to condition screening
+      console.log('All data saved, navigating...')
       navigate('/intake/conditions')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error)
+      alert(`Error saving profile: ${error?.message || JSON.stringify(error)}`)
       setSaving(false)
     }
   }

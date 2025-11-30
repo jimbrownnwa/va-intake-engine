@@ -50,19 +50,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active session on mount
+    // Check active session on mount - use getUser() to validate server-side
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        // getUser() makes a server call to validate the token, unlike getSession()
+        // which only reads from localStorage. This ensures deleted users are caught.
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
 
-        if (error) {
-          console.error('Error getting session:', error);
-        } else {
+        if (userError) {
+          // Token is invalid or user was deleted - clear any stale session
+          console.error('Error validating user:', userError);
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else if (currentUser) {
+          // User is valid, now get the session for the token
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
           setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+          setUser(currentUser);
+        } else {
+          setSession(null);
+          setUser(null);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        setSession(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
