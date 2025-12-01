@@ -291,6 +291,11 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
 
   /**
    * Save an answer (with upsert logic)
+   *
+   * Uses manual check-then-insert/update pattern because the answers table
+   * has partial unique indexes that can't be referenced directly in onConflict:
+   * - answers_unique_global: (session_id, question_key) WHERE condition_instance_id IS NULL
+   * - answers_unique_condition: (session_id, condition_instance_id, question_key) WHERE condition_instance_id IS NOT NULL
    */
   const saveAnswer = useCallback(async (
     questionKey: string,
@@ -300,18 +305,46 @@ export const SessionProvider = ({ children }: SessionProviderProps) => {
     if (!state.session) return;
 
     try {
-      const { error } = await supabase
+      // Build the query to check for existing answer
+      let existingQuery = supabase
         .from('answers')
-        .upsert({
-          session_id: state.session.id,
-          question_key: questionKey,
-          condition_instance_id: conditionInstanceId,
-          answer_value: value,
-        }, {
-          onConflict: 'session_id,question_key,condition_instance_id',
-        });
+        .select('id')
+        .eq('session_id', state.session.id)
+        .eq('question_key', questionKey);
 
-      if (error) throw error;
+      // Handle NULL condition_instance_id correctly
+      if (conditionInstanceId === null) {
+        existingQuery = existingQuery.is('condition_instance_id', null);
+      } else {
+        existingQuery = existingQuery.eq('condition_instance_id', conditionInstanceId);
+      }
+
+      const { data: existingAnswer } = await existingQuery.maybeSingle();
+
+      if (existingAnswer) {
+        // Update existing answer
+        const { error } = await supabase
+          .from('answers')
+          .update({
+            answer_value: value,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingAnswer.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new answer
+        const { error } = await supabase
+          .from('answers')
+          .insert({
+            session_id: state.session.id,
+            question_key: questionKey,
+            condition_instance_id: conditionInstanceId,
+            answer_value: value,
+          });
+
+        if (error) throw error;
+      }
 
       // Update local state
       const key = conditionInstanceId
