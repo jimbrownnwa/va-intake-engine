@@ -158,10 +158,11 @@ const VeteranProfilePage = () => {
       }
 
       // Save to veteran_profile table (requires service_start_date)
-      if (militaryData?.serviceStartDate) {
+      if (militaryData?.serviceStartDate && user) {
         console.log('Saving veteran_profile...')
         const profileData: Record<string, any> = {
           session_id: session.id,
+          veteran_id: user.id,
           service_start_date: militaryData.serviceStartDate.toISOString().split('T')[0],
         }
 

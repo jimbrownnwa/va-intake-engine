@@ -81,6 +81,7 @@ export interface Database {
         Row: {
           id: string;
           session_id: string;
+          veteran_id: string;
           military_status: 'active_duty' | 'veteran' | 'guard' | 'reserve' | null;
           va_file_number: string | null;
           service_start_date: string;
@@ -92,6 +93,7 @@ export interface Database {
         Insert: {
           id?: string;
           session_id: string;
+          veteran_id: string;
           military_status?: 'active_duty' | 'veteran' | 'guard' | 'reserve' | null;
           va_file_number?: string | null;
           service_start_date: string;
@@ -103,6 +105,7 @@ export interface Database {
         Update: {
           id?: string;
           session_id?: string;
+          veteran_id?: string;
           military_status?: 'active_duty' | 'veteran' | 'guard' | 'reserve' | null;
           va_file_number?: string | null;
           service_start_date?: string;
